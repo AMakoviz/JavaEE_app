@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script >
+        function addAddressField() {
+           let l = document.getElementById("addresses").cloneNode(true);
+            document.body.append(l);
+
+        }
+    </script>
+</head>
+<body>
+    <form action="create" method="post">
+        <h2>Добавление клиента</h2><br/>
+        <label>Имя клиента</label>
+        <input type="text" size="100" name="client-name"/> &nbsp;
+        <label for="type">Тип клиента</label>
+        <select id="type" name="type">
+            <option value="individual">Физическое лицо</option>
+            <option value="legal">Юридическое лицо</option>
+        </select><br/><br/>
+
+        <div id="addresses">
+            <label>IP-адрес</label>
+            <input type="text" size="25" name="ip"/>&nbsp;
+            <label>MAC-адрес</label>
+            <input type="text" size="20" name="mac"/>&nbsp;
+            <label>Модель устройства</label>
+            <input type="text" size="100" name="model"/><br/>;
+            <label>Адрес местонахождения</label><br/>
+            <input type="text" size="200" name="location"/><br/><br/>
+
+        </div>
+        <button type="button" onclick="addAddressField()">Добавить адрес</button><br/><br/>
+        <input type="submit" name="save" value="Сохранить"/>
+
+    </form>
+</body>
+</html>

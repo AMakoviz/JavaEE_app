@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ViewList</title>
+</head>
+<body>
+  <form action="viewList" method="post">
+    <label>Поиск клиента</label>
+    <input type="text" size="200" name="filter"/> &nbsp;
+    <label>Фильтр по типу клиента</label>
+    <select id="type" name="type">
+      <option value="individual">Физическое лицо</option>
+      <option value="legal">Юридическое лицо</option>
+    </select><br/><br/>
+    <input type="submit" name="find" value="Искать"/>
+    <input type="submit" name="create" value="Создать нового клиента"/>
+  </form>
+<table>
+  <tr>
+    <th>Id клиента</th>
+    <th>Имя клиента</th>
+    <th>Тип клиента</th>
+    <th>Дата добавления</th>
+    <th>IP адрес</th>
+    <th>MAC адрес</th>
+    <th>Модель устройства</th>
+    <th>Адрес подключения</th>
+  </tr>
+</table>
+
+</body>
+</html>

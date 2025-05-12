@@ -3,9 +3,11 @@ package org.example.lab1_j200.beans;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import org.example.lab1_j200.repositories.ClientRepository;
+import org.example.lab1_j200.repositories.entities.AddressEntity;
 import org.example.lab1_j200.repositories.entities.ClientEntity;
 
 import java.util.List;
+import java.util.Set;
 
 @Stateless
 public class SelectBean implements SelectInterface{
@@ -29,5 +31,10 @@ public class SelectBean implements SelectInterface{
             return getAllClients();
         }
         return clientRepository.getByFilterClient(filter, type);
+    }
+
+    @Override
+    public AddressEntity getAddressById(Long id) {
+        return clientRepository.getByIdAddress(id);
     }
 }

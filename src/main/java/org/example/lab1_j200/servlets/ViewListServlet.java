@@ -84,7 +84,8 @@ public class ViewListServlet extends HttpServlet {
                 out.println("<td>" + addressEntity.getModel() + "</td>\n");
                 out.println("<td>" + addressEntity.getAddress() + "</td>\n");
                 out.println("<td><a href=\"" + request.getContextPath() + "/update?id=" + client.getId() + "&mode=add\">Добавить адрес</a></td>");
-                out.println("<td><a href=\"" + request.getContextPath() + "/update?id=" + client.getId() + "&mode=edit\">Редактировать</a></td>");
+                out.println("<td><a href=\"" + request.getContextPath() + "/update?id=" + client.getId() +
+                        "&addressId=" + addressEntity.getId()+ "&mode=edit\">Редактировать</a></td>");
                 out.println("<td><a href=\"" + request.getContextPath() + "/delete?id=" + addressEntity.getId() + "\">Удалить</a></td>");
                 out.println("  </tr>\n");
             }

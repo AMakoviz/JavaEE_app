@@ -65,4 +65,14 @@ public class ClientEntity {
         this.addressEntities = addresses;
     }
 
+    @Override
+    public String toString() {
+        return "ClientEntity{" +
+                "id=" + id +
+                ", clientName='" + clientName + '\'' +
+                ", type='" + type + '\'' +
+                ", added=" + added +
+                ", addressEntities=" + addressEntities +
+                '}';
+    }
 }

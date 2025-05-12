@@ -2,6 +2,8 @@ package org.example.lab1_j200.repositories.entities;
 
 import jakarta.persistence.*;
 
+import java.util.Objects;
+
 @Entity
 @Table(name = "addresses")
 public class AddressEntity {
@@ -74,4 +76,15 @@ public class AddressEntity {
         this.client = client;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        AddressEntity that = (AddressEntity) o;
+        return Objects.equals(id, that.id) && Objects.equals(ipAddress, that.ipAddress) && Objects.equals(macAddress, that.macAddress) && Objects.equals(model, that.model) && Objects.equals(address, that.address) && Objects.equals(client, that.client);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, ipAddress, macAddress, model, address, client);
+    }
 }

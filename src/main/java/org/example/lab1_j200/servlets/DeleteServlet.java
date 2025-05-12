@@ -20,6 +20,7 @@ public class DeleteServlet extends HttpServlet {
         response.setContentType("text/html");
         response.setCharacterEncoding("UTF-8");
         Long id = Long.parseLong(request.getParameter("id"));
+        System.out.println("ID: " + id);
         updateBean.delete(id);
         response.sendRedirect("viewList");
     }

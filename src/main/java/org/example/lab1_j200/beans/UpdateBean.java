@@ -14,167 +14,174 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Stateless
-public class UpdateBean implements UpdateInterface{
+public class UpdateBean implements UpdateInterface {
 
     @EJB
     private ClientRepository clientRepository;
+    @EJB
+    private SelectInterface selectBean;
 
     @Override
-    public ClientEntity create(String clientName, String type, String[] ip, String[] mac, String[] model, String[] location) {
-        if (checkClientName(clientName) && checkType(type) && checkIp(ip) && checkMac(mac) && checkModel(model) && checkLocation(location)){
-            ClientEntity clientEntity = new ClientEntity();
-            clientEntity.setClientName(clientName);
-            clientEntity.setType(type);
-            clientEntity.setAdded(Instant.now());
-            Set<AddressEntity> addresses = new HashSet<>();
-            addresses = setAddress(clientEntity, ip, mac, model, location);
-           if (addresses.isEmpty()){
-               return null;
+    public ClientEntity create(ClientEntity client) {
+        if (checkClientName(client.getClientName()) && checkType(client.getType())) {
+            client.setAdded(Instant.now());
+            Set<AddressEntity> addresses = client.getAddresses();
+           for (AddressEntity address : addresses) {
+               if (checkIp(address.getIpAddress()) && checkMac(address.getMacAddress()) &&
+               checkModel(address.getModel()) && checkLocation(address.getAddress())) {
+                   return clientRepository.create(client);
+               } else return null;
            }
-            clientEntity.setAddresses(addresses);
-            return clientRepository.create(clientEntity);
         }
         return null;
     }
 
     @Override
-    public ClientEntity update(Long clientId, String clientName, String type, String[] addressId, String[] ip, String[] mac, String[] model, String[] location) {
-        if (clientRepository.getById(clientId)!=null){
-            ClientEntity clientEntity = clientRepository.getById(clientId);
-            if (checkClientName(clientName) && !clientEntity.getClientName().equals(clientName)){
-                clientEntity.setClientName(clientName);
-            }
-            if (checkType(type) && !clientEntity.getType().equals(type)){
-                clientEntity.setType(type);
-            }
-            Set<AddressEntity> addresses = new HashSet<>();
-            addresses.addAll(clientEntity.getAddresses());
-            if (addressId!=null){ //Так как в массиве есть айди, значит происходило редактирование старых адресов
-                if (checkAddress(ip, mac, model, location) && checkIp(ip) && checkMac(mac) && checkModel(model) && checkLocation(location)) {
-                    for (int i = 0; i < addressId.length; i++) {
-                       AddressEntity addressEntity = clientRepository.getByIdAddress(Long.parseLong(addressId[i]));
-                        if (!addressEntity.getIpAddress().equals(ip[i])){
-                            addressEntity.setIpAddress(ip[i]);
-                        }
-                        if (!addressEntity.getMacAddress().equals(mac[i])){
-                            addressEntity.setMacAddress(mac[i]);
-                        }
-                        if (!addressEntity.getModel().equals(model[i])){
-                            addressEntity.setModel(model[i]);
-                        }
-                        if (!addressEntity.getAddress().equals(location[i])){
-                            addressEntity.setAddress(location[i]);
+    public ClientEntity update(ClientEntity clientFromServlet) {
+        System.out.println(clientFromServlet);
+
+        ClientEntity clientFromBD = selectBean.getClientByParam(clientFromServlet.getId());
+        if (clientFromBD != null) {
+            clientFromServlet.setAdded(clientFromBD.getAdded());
+            Set <AddressEntity> addressFromDB = clientFromBD.getAddresses();
+            Set <AddressEntity> addressFromServlet = clientFromServlet.getAddresses();
+            if (checkClientName(clientFromServlet.getClientName()) && checkType(clientFromServlet.getType())) {
+                long idAddress = 0L;
+
+                for (AddressEntity address : addressFromServlet) {
+                    System.out.println(address.getIpAddress());
+                    if (checkIp(address.getIpAddress()) && checkMac(address.getMacAddress())) {
+
+                        if (address.getId()==null || address.getId().equals("")){
+                            idAddress = 0L; //если добавили новый адрес
+                        } else idAddress = address.getId();
+                    } else return null;
+                }
+                if (idAddress == 0L) {
+                    addressFromServlet.addAll(addressFromDB);
+                } else {
+                    for (AddressEntity address : addressFromDB) {
+                        if (address.getId() != idAddress) {
+                            addressFromServlet.add(address);
                         }
                     }
                 }
-            } else if (checkAddress(ip, mac, model, location) && checkIp(ip) && checkMac(mac) && checkModel(model) && checkLocation(location)){
-                addresses.addAll(setAddress(clientEntity, ip, mac, model, location));
-                clientEntity.setAddresses(addresses);
+
+                clientFromServlet.setAddresses(addressFromServlet);
+                return clientRepository.update(clientFromServlet);
+
             } else return null;
-            return clientRepository.update(clientEntity);
-        }
-        return null;
+        } return null;
     }
 
     @Override
     public void delete(Long addressId) {
-        AddressEntity addressEntity =clientRepository.getByIdAddress(addressId);
+        AddressEntity addressEntity = selectBean.getAddressById(addressId);
         ClientEntity clientEntity = addressEntity.getClient();
-        if (clientEntity!=null) {
-            if (clientEntity.getAddresses().size()==1){
+        if (clientEntity != null) {
+            if (clientEntity.getAddresses().size() == 1) {
                 clientRepository.delete(clientEntity);
-            } else {
+            } else if (clientEntity.getAddresses().size() > 1) {
                 clientRepository.deleteAddress(addressEntity);
             }
         }
     }
 
-    private  Set<AddressEntity> setAddress(ClientEntity clientEntity, String[] ip, String[] mac, String[] model, String[] location) {
-        Set<AddressEntity> addresses = new HashSet<>();
-        if (checkAddress(ip, mac, model, location)) {
-            for (int i = 0; i < ip.length; i++) {
-                AddressEntity addressEntity = new AddressEntity();
-                addressEntity.setIpAddress(ip[i]);
-                addressEntity.setMacAddress(mac[i]);
-                addressEntity.setModel(model[i]);
-                addressEntity.setAddress(location[i]);
-                addressEntity.setClient(clientEntity);
-                addresses.add(addressEntity);
-            }
-        }  else return null;
-        return addresses;
-    }
+//    private Set<AddressEntity> setAddress(ClientEntity clientEntity) {
+//        Set<AddressEntity> addressesFromServlet = clientEntity.getAddresses();
+//        AddressEntity address = new AddressEntity();
+//        for (AddressEntity addressFromServlet : addressesFromServlet) {
+//            if (checkIp(addressFromServlet.getIpAddress())){
+//                address.setIpAddress(addressFromServlet.getIpAddress());
+//            } else return null;
+//            if (checkMac(addressFromServlet.getMacAddress())){
+//                address.setMacAddress(addressFromServlet.getMacAddress());
+//            } else return null;
+//            if (checkModel(addressFromServlet.getModel())){
+//                address.setModel(addressFromServlet.getModel());
+//            } else return null;
+//            if (checkLocation(addressFromServlet.getAddress())){
+//                address.setAddress(addressFromServlet.getAddress());
+//            } else return null;
+//        }
+//        address.setClient(clientEntity);
+//
+//
+//        return address;
+//    }
+
     private boolean checkClientName(String clientName) {
         String regex = "^[А-Яа-яЁё\\-,. ]+$";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(clientName);
         if (clientName == null || clientName.equals("")) {
             return false;
-        } else if (clientName.length() >100) {
+        } else if (clientName.length() > 100) {
             return false;
         } else if (!matcher.matches()) {
             return false;
         } else return true;
     }
-    private boolean checkIp(String[] ip) {
+
+    private boolean checkIp(String ip) {
         String regex = "[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}.[0-9]{1,3}";
         Pattern pattern = Pattern.compile(regex);
-        for (String s : ip) {
-            Matcher matcher = pattern.matcher(s);
-            if (s.trim() == null || s.trim().isEmpty()) {
-                return false;
-            }
-            if (s.length() >25) {
-                return false;
-            }
-            if (!matcher.matches()) {
-                return false;
-            }
+
+        Matcher matcher = pattern.matcher(ip);
+        if (ip == null || ip.trim().isEmpty()) {
+            return false;
         }
-        return true;
-    }
-    private boolean checkMac(String[] mac) {
-        String regex = "([A-F0-9]{2}-){5}[A-F0-9]{2}";
-        Pattern pattern = Pattern.compile(regex);
-        for (String s : mac) {
-            Matcher matcher = pattern.matcher(s);
-            if (s.trim() == null || s.trim().isEmpty()) {
-                return false;
-            }
-            if (s.length() > 20) {
-                return false;
-            }
-            if (!matcher.matches()) {
-                return false;
-            }
+        if (ip.length() > 25) {
+            return false;
+        }
+        if (!matcher.matches()) {
+            return false;
         }
         return true;
     }
 
-    private boolean checkModel(String[] model) {
-        for (String s : model) {
-            if (s.trim() == null || s.trim().isEmpty()) {
-                return false;}
-            if (s.length() >100) {
-                return false;
-            }
+    private boolean checkMac(String mac) {
+        String regex = "([A-F0-9]{2}-){5}[A-F0-9]{2}";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(mac);
+        if (mac == null || mac.trim().isEmpty()) {
+            return false;
+        }
+        if (mac.length() > 20) {
+            return false;
+        }
+        if (!matcher.matches()) {
+            return false;
         }
         return true;
     }
-    private boolean checkLocation(String[] location) {
-        for (String s : location) {
-            if (s.trim() == null || s.trim().isEmpty()) {
-                return false;
-            }
-            if (s.length() >200) {
-                return false;
-            }
+
+    private boolean checkModel(String model) {
+        if (model == null || model.trim().isEmpty()) {
+            return false;
         }
+        if (model.length() > 100) {
+            return false;
+        }
+
         return true;
     }
-    private boolean checkAddress(String[] ip, String[] mac, String[] model, String[] location) {
-        return ip.length == mac.length && ip.length == model.length && ip.length == location.length;
+
+    private boolean checkLocation(String location) {
+        if (location == null || location.trim().isEmpty()) {
+            return false;
+        }
+        if (location.length() > 200) {
+            return false;
+        }
+
+        return true;
     }
+
+//    private boolean checkAddress(String ip, String mac, String model, String location) {
+//        return ip.length == mac.length && ip.length == model.length && ip.length == location.length;
+//    }
+
     private boolean checkType(String type) {
         if (type == null || type.trim().isEmpty()) {
             return false;
@@ -183,6 +190,27 @@ public class UpdateBean implements UpdateInterface{
             return false;
         }
         return true;
+    }
+
+    private void errorMessage(String clientName, String type, String ip, String mac, String model, String location) {
+        if (!checkClientName(clientName)) {
+            System.out.println("Error at Client name");
+        }
+        if (!checkType(type)) {
+            System.out.println("Error at type");
+        }
+        if (!checkIp(ip)) {
+            System.out.println("Error at ip");
+        }
+        if (!checkMac(mac)) {
+            System.out.println("Error at mac");
+        }
+        if (!checkModel(model)) {
+            System.out.println("Error at model");
+        }
+        if (!checkLocation(location)) {
+            System.out.println("Error at location");
+        }
     }
 
 }
